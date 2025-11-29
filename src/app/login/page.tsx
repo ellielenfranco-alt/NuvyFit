@@ -1,128 +1,154 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, Sparkles } from 'lucide-react';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { Sparkles, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
-  const supabase = createBrowserClient();
+  const [loading, setLoading] = useState(true);
+  const configured = isSupabaseConfigured();
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) throw error;
-        setError('Verifique seu email para confirmar o cadastro!');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        router.push('/');
-      }
-    } catch (error: any) {
-      setError(error.message || 'Erro ao autenticar');
-    } finally {
+  useEffect(() => {
+    if (!configured) {
       setLoading(false);
+      return;
     }
-  };
+
+    // Verificar se já está autenticado
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push('/dashboard');
+      } else {
+        setLoading(false);
+      }
+    }).catch(() => {
+      setLoading(false);
+    });
+
+    // Listener para mudanças de autenticação
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        router.push('/dashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, configured]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2">
-            <Sparkles className="w-8 h-8 text-purple-600" />
-            Bem-vinda!
-          </CardTitle>
-          <CardDescription className="text-center text-base">
-            {isSignUp ? 'Crie sua conta para começar' : 'Entre na sua conta'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo/Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4 shadow-lg">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">ELA+</h1>
+          <p className="text-gray-600">Seu app de saúde e bem-estar completo</p>
+        </div>
+
+        {/* Alerta se Supabase não estiver configurado */}
+        {!configured && (
+          <Alert className="mb-6 border-orange-200 bg-orange-50">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertTitle className="text-orange-900">Configuração Necessária</AlertTitle>
+            <AlertDescription className="text-orange-800">
+              Para usar a autenticação, configure suas credenciais do Supabase em{' '}
+              <strong>Configurações do Projeto → Integrações → Supabase</strong>.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Auth Card */}
+        <Card className="shadow-2xl border-0">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Bem-vinda!</CardTitle>
+            <CardDescription className="text-center">
+              {configured ? 'Entre com sua conta para continuar' : 'Configure o Supabase para continuar'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {configured ? (
+              <Auth
+                supabaseClient={supabase}
+                appearance={{
+                  theme: ThemeSupa,
+                  variables: {
+                    default: {
+                      colors: {
+                        brand: '#a855f7',
+                        brandAccent: '#9333ea',
+                      },
+                    },
+                  },
+                }}
+                localization={{
+                  variables: {
+                    sign_in: {
+                      email_label: 'Email',
+                      password_label: 'Senha',
+                      email_input_placeholder: 'seu@email.com',
+                      password_input_placeholder: 'Sua senha',
+                      button_label: 'Entrar',
+                      loading_button_label: 'Entrando...',
+                      social_provider_text: 'Entrar com {{provider}}',
+                      link_text: 'Já tem uma conta? Entre',
+                    },
+                    sign_up: {
+                      email_label: 'Email',
+                      password_label: 'Senha',
+                      email_input_placeholder: 'seu@email.com',
+                      password_input_placeholder: 'Crie uma senha',
+                      button_label: 'Criar conta',
+                      loading_button_label: 'Criando conta...',
+                      social_provider_text: 'Criar conta com {{provider}}',
+                      link_text: 'Não tem uma conta? Cadastre-se',
+                    },
+                    forgotten_password: {
+                      email_label: 'Email',
+                      password_label: 'Senha',
+                      email_input_placeholder: 'seu@email.com',
+                      button_label: 'Enviar instruções',
+                      loading_button_label: 'Enviando...',
+                      link_text: 'Esqueceu sua senha?',
+                    },
+                  },
+                }}
+                providers={[]}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-            {error && (
-              <div className={`text-sm p-3 rounded-lg ${
-                error.includes('Verifique') 
-                  ? 'bg-green-50 text-green-700 border border-green-200' 
-                  : 'bg-red-50 text-red-700 border border-red-200'
-              }`}>
-                {error}
+            ) : (
+              <div className="text-center py-8 text-gray-600">
+                <p className="mb-4">Aguardando configuração do Supabase...</p>
+                <p className="text-sm">Após configurar, recarregue a página.</p>
               </div>
             )}
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Carregando...
-                </>
-              ) : (
-                isSignUp ? 'Criar Conta' : 'Entrar'
-              )}
-            </Button>
-          </form>
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-              }}
-              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-              disabled={loading}
-            >
-              {isSignUp ? 'Já tem conta? Entre aqui' : 'Não tem conta? Cadastre-se'}
-            </button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-gray-600 mt-8">
+          Ao continuar, você concorda com nossos Termos de Uso e Política de Privacidade
+        </p>
+      </div>
     </div>
   );
 }

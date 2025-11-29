@@ -1,33 +1,27 @@
-import { createClient } from '@supabase/supabase-js'
+// src/lib/supabase/client.ts
+'use client'
 
-export function createBrowserClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('⚠️ Variáveis de ambiente do Supabase não configuradas')
+    console.warn('⚠️ Variáveis do Supabase não configuradas.')
+    // retorno mock para evitar crashes em dev
     return {
       auth: {
         getUser: async () => ({ data: { user: null }, error: null }),
-        signInWithPassword: async () => ({
-          data: null,
-          error: {
-            message: 'Supabase não configurado. Configure nas integrações do projeto.'
-          }
-        }),
-        signUp: async () => ({
-          data: null,
-          error: {
-            message: 'Supabase não configurado. Configure nas integrações do projeto.'
-          }
-        }),
+        signInWithPassword: async () => ({ data: null, error: { message: 'Supabase não configurado' } }),
+        signUp: async () => ({ data: null, error: { message: 'Supabase não configurado' } }),
         signOut: async () => ({ error: null }),
-        onAuthStateChange: () => ({
-          data: { subscription: { unsubscribe: () => {} } }
-        })
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
       }
     } as any
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey)
+  return createBrowserClient(supabaseUrl, supabaseAnonKey)
 }
+
+export { createClient as createBrowserClient }
