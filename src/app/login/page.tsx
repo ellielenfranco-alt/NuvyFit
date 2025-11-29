@@ -1,47 +1,75 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Sparkles, AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const configured = isSupabaseConfigured();
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+  const [isSignUp, setIsSignUp] = useState(false)
 
   useEffect(() => {
-    if (!configured) {
-      setLoading(false);
-      return;
-    }
-
+    const supabase = createClient()
+    
     // Verificar se já está autenticado
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.push('/dashboard');
+        router.push('/dashboard')
       } else {
-        setLoading(false);
+        setLoading(false)
       }
     }).catch(() => {
-      setLoading(false);
-    });
+      setLoading(false)
+    })
 
     // Listener para mudanças de autenticação
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        router.push('/dashboard');
+        router.push('/dashboard')
       }
-    });
+    })
 
-    return () => subscription.unsubscribe();
-  }, [router, configured]);
+    return () => subscription.unsubscribe()
+  }, [router])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessage(null)
+    setLoading(true)
+
+    try {
+      const supabase = createClient()
+      
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password })
+        if (error) {
+          setMessage(error.message)
+        } else {
+          setMessage('Conta criada! Verifique seu e-mail para confirmar.')
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) {
+          setMessage(error.message)
+        } else {
+          router.push('/dashboard')
+        }
+      }
+    } catch (err) {
+      setMessage('Erro ao processar. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -51,7 +79,7 @@ export default function LoginPage() {
           <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -66,81 +94,71 @@ export default function LoginPage() {
           <p className="text-gray-600">Seu app de saúde e bem-estar completo</p>
         </div>
 
-        {/* Alerta se Supabase não estiver configurado */}
-        {!configured && (
-          <Alert className="mb-6 border-orange-200 bg-orange-50">
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-            <AlertTitle className="text-orange-900">Configuração Necessária</AlertTitle>
-            <AlertDescription className="text-orange-800">
-              Para usar a autenticação, configure suas credenciais do Supabase em{' '}
-              <strong>Configurações do Projeto → Integrações → Supabase</strong>.
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Auth Card */}
         <Card className="shadow-2xl border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Bem-vinda!</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              {isSignUp ? 'Criar Conta' : 'Bem-vinda!'}
+            </CardTitle>
             <CardDescription className="text-center">
-              {configured ? 'Entre com sua conta para continuar' : 'Configure o Supabase para continuar'}
+              {isSignUp ? 'Cadastre-se para começar' : 'Entre com sua conta para continuar'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {configured ? (
-              <Auth
-                supabaseClient={supabase}
-                appearance={{
-                  theme: ThemeSupa,
-                  variables: {
-                    default: {
-                      colors: {
-                        brand: '#a855f7',
-                        brandAccent: '#9333ea',
-                      },
-                    },
-                  },
-                }}
-                localization={{
-                  variables: {
-                    sign_in: {
-                      email_label: 'Email',
-                      password_label: 'Senha',
-                      email_input_placeholder: 'seu@email.com',
-                      password_input_placeholder: 'Sua senha',
-                      button_label: 'Entrar',
-                      loading_button_label: 'Entrando...',
-                      social_provider_text: 'Entrar com {{provider}}',
-                      link_text: 'Já tem uma conta? Entre',
-                    },
-                    sign_up: {
-                      email_label: 'Email',
-                      password_label: 'Senha',
-                      email_input_placeholder: 'seu@email.com',
-                      password_input_placeholder: 'Crie uma senha',
-                      button_label: 'Criar conta',
-                      loading_button_label: 'Criando conta...',
-                      social_provider_text: 'Criar conta com {{provider}}',
-                      link_text: 'Não tem uma conta? Cadastre-se',
-                    },
-                    forgotten_password: {
-                      email_label: 'Email',
-                      password_label: 'Senha',
-                      email_input_placeholder: 'seu@email.com',
-                      button_label: 'Enviar instruções',
-                      loading_button_label: 'Enviando...',
-                      link_text: 'Esqueceu sua senha?',
-                    },
-                  },
-                }}
-                providers={[]}
-              />
-            ) : (
-              <div className="text-center py-8 text-gray-600">
-                <p className="mb-4">Aguardando configuração do Supabase...</p>
-                <p className="text-sm">Após configurar, recarregue a página.</p>
-              </div>
+            {message && (
+              <Alert className={`mb-4 ${message.includes('criada') || message.includes('sucesso') ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                <AlertCircle className={`h-4 w-4 ${message.includes('criada') || message.includes('sucesso') ? 'text-green-600' : 'text-red-600'}`} />
+                <AlertDescription className={message.includes('criada') || message.includes('sucesso') ? 'text-green-800' : 'text-red-800'}>
+                  {message}
+                </AlertDescription>
+              </Alert>
             )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="seu@email.com"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">Senha</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder={isSignUp ? 'Crie uma senha' : 'Sua senha'}
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Processando...' : isSignUp ? 'Criar conta' : 'Entrar'}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+              >
+                {isSignUp ? 'Já tem uma conta? Entre' : 'Não tem uma conta? Cadastre-se'}
+              </button>
+            </div>
           </CardContent>
         </Card>
 
@@ -150,5 +168,5 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
-  );
+  )
 }

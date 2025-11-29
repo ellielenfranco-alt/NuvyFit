@@ -1,21 +1,37 @@
 'use client'
 import React, { useState } from 'react'
-import { useAuth } from '@/components/AuthProvider'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export default function RegisterPage() {
-  const { signUp } = useAuth()
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
-    const res = await signUp(email, password)
-    if (res.error) {
-      setMessage(res.error.message)
-    } else {
-      setMessage('Verifique seu e-mail para confirmar a conta (se aplicável).')
+    setLoading(true)
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password 
+      })
+
+      if (error) {
+        setMessage(error.message)
+      } else {
+        setMessage('Conta criada com sucesso! Verifique seu e-mail para confirmar.')
+        setTimeout(() => router.push('/login'), 2000)
+      }
+    } catch (err) {
+      setMessage('Erro ao criar conta. Tente novamente.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -26,7 +42,11 @@ export default function RegisterPage() {
           Criar Conta — ELA+
         </h1>
 
-        {message && <div className="text-green-600 mb-4 p-3 bg-green-50 rounded-lg">{message}</div>}
+        {message && (
+          <div className={`mb-4 p-3 rounded-lg ${message.includes('sucesso') ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
+            {message}
+          </div>
+        )}
 
         <label className="block mb-4">
           <span className="text-sm font-medium text-gray-700">Email</span>
@@ -36,6 +56,7 @@ export default function RegisterPage() {
             onChange={(e) => setEmail(e.target.value)} 
             className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
             required
+            disabled={loading}
           />
         </label>
 
@@ -47,14 +68,17 @@ export default function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)} 
             className="w-full p-3 border border-gray-300 rounded-lg mt-1 focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
             required
+            disabled={loading}
+            minLength={6}
           />
         </label>
 
         <button 
           type="submit" 
-          className="w-full py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg font-semibold hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+          disabled={loading}
+          className="w-full py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg font-semibold hover:from-pink-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Criar conta
+          {loading ? 'Criando conta...' : 'Criar conta'}
         </button>
 
         <p className="mt-6 text-sm text-center text-gray-600">
