@@ -1,6 +1,6 @@
 'use client';
 
-import { supabase } from './supabase';
+import { createClient } from '@/lib/supabase/client';
 
 export interface SignUpData {
   email: string;
@@ -15,6 +15,8 @@ export interface SignInData {
 
 // Cadastro de novo usuário
 export async function signUp({ email, password, fullName }: SignUpData) {
+  const supabase = createClient();
+  
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -31,6 +33,8 @@ export async function signUp({ email, password, fullName }: SignUpData) {
 
 // Login
 export async function signIn({ email, password }: SignInData) {
+  const supabase = createClient();
+  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -42,12 +46,16 @@ export async function signIn({ email, password }: SignInData) {
 
 // Logout
 export async function signOut() {
+  const supabase = createClient();
+  
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
 // Recuperar senha
 export async function resetPassword(email: string) {
+  const supabase = createClient();
+  
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/auth/reset-password`,
   });
@@ -58,6 +66,8 @@ export async function resetPassword(email: string) {
 
 // Atualizar senha
 export async function updatePassword(newPassword: string) {
+  const supabase = createClient();
+  
   const { data, error } = await supabase.auth.updateUser({
     password: newPassword,
   });
@@ -68,6 +78,8 @@ export async function updatePassword(newPassword: string) {
 
 // Obter sessão atual
 export async function getSession() {
+  const supabase = createClient();
+  
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error) throw error;
   return session;
@@ -75,6 +87,8 @@ export async function getSession() {
 
 // Obter usuário atual
 export async function getUser() {
+  const supabase = createClient();
+  
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
   return user;
