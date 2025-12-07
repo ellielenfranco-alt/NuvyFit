@@ -47,7 +47,6 @@ export default function DashboardPage() {
 
     loadSession();
 
-    // Listener de mudanças de login/logout
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         router.push('/login');
@@ -73,7 +72,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Mock data
   const stats = {
     todayCalories: 1450,
     calorieGoal: 2000,
@@ -142,4 +140,96 @@ export default function DashboardPage() {
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
               Olá, {userEmail.split('@')[0]}! 👋
             </h1>
-            <p className="te
+            <p className="text-gray-600 text-lg">Aqui está seu resumo de hoje</p>
+          </div>
+
+          <Button 
+            onClick={handleLogout}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Sair
+          </Button>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Ações Rápidas</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link key={action.href} href={action.href}>
+                  <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-gray-300">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} group-hover:scale-110 transition-transform`}>
+                          <Icon className="w-6 h-6 text-white" />
+                        </div>
+
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-gray-700">
+                            {action.title}
+                          </h3>
+                          <p className="text-sm text-gray-600">{action.description}</p>
+                        </div>
+
+                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Próximo Tratamento */}
+        <Card className="mb-8 bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 border-purple-200 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Scissors className="w-5 h-5 text-purple-600" />
+              Próximo Tratamento Capilar
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-lg font-semibold text-gray-900 mb-1">{stats.nextTreatment}</p>
+                <p className="text-sm text-gray-600">Agendado para amanhã</p>
+              </div>
+
+              <Link href="/hair">
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+                  Ver Cronograma
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dica do Dia */}
+        <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-yellow-800">
+              <Sparkles className="w-5 h-5" />
+              Dica Personalizada da IA
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <p className="text-gray-700 leading-relaxed">
+              Você está na fase folicular do seu ciclo! É o momento perfeito para treinos mais intensos 
+              e para iniciar novos desafios. Seu corpo está com energia alta e recuperação rápida. 
+              Aproveite para aumentar a intensidade dos treinos de força. 💪✨
+            </p>
+          </CardContent>
+        </Card>
+
+      </div>
+    </div>
+  );
+}

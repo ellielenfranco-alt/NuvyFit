@@ -1,5 +1,1 @@
-{
-  "node": {},
-  "edge": {},
-  "encryptionKey": "7o8E6+O60ArB/FCiSGEPHCa6MPW/BQfMC9RkKVcvBmE="
-}
+{"node":{"404174ec1826ed93df3104b23181bb4db92d93b79b":{"workers":{"app/meals/page":{"moduleId":"1895","async":false}},"layer":{"app/meals/page":"action-browser"}}},"edge":{},"encryptionKey":"PogVrFA2sVrwfddDA9vv81rkePmufA3IZRoncjqN/Ys="}
