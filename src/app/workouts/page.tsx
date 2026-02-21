@@ -60,6 +60,8 @@ export default function WorkoutsPage() {
   ];
 
   const handleCompleteWorkout = async () => {
+  alert("Clique funcionando")
+}
   const {
     data: { user }
   } = await supabase.auth.getUser()
