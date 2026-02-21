@@ -6,6 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function WorkoutsPage() {
   const [location, setLocation] = useState<'home' | 'gym'>('home');
@@ -53,6 +59,33 @@ export default function WorkoutsPage() {
     }
   ];
 
+  const handleCompleteWorkout = async () => {
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    alert('Usuário não autenticado')
+    return
+  }
+
+  const { error } = await supabase.from('workout_sessions').insert([
+    {
+      user_id: user.id,
+      workout_name: todayWorkout.type,
+      duration: todayWorkout.duration,
+      calories: 300
+    }
+  ])
+
+  if (error) {
+    console.error(error)
+    alert('Erro ao salvar treino')
+  } else {
+    alert('Treino salvo com sucesso 💪🔥')
+  }
+}
+  
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -171,7 +204,10 @@ export default function WorkoutsPage() {
                 </div>
               ))}
 
-              <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg py-6">
+              <Button 
+  onClick={handleCompleteWorkout}
+  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg py-6"
+>
                 <Dumbbell className="w-5 h-5 mr-2" />
                 Iniciar Treino
               </Button>
