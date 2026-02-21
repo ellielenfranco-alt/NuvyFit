@@ -62,32 +62,7 @@ export default function WorkoutsPage() {
   const handleCompleteWorkout = async () => {
   alert("Clique funcionando")
 }
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    alert('Usuário não autenticado')
-    return
-  }
-
-  const { error } = await supabase.from('workout_sessions').insert([
-    {
-      user_id: user.id,
-      workout_name: todayWorkout.type,
-      duration: todayWorkout.duration,
-      calories: 300
-    }
-  ])
-
-  if (error) {
-    console.error(error)
-    alert('Erro ao salvar treino')
-  } else {
-    alert('Treino salvo com sucesso 💪🔥')
-  }
-}
-  
+   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
