@@ -73,7 +73,7 @@ export default function WorkoutsPage() {
           Planos personalizados pela IA para casa ou academia
         </p>
       </div>
-
+<h1 style={{color: "red"}}>TESTE VERMELHO</h1>
       {/* Progresso Semanal */}
       <Card className="mb-6 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
         <CardHeader>
